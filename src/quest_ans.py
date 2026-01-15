@@ -71,8 +71,8 @@ def search_correct_answers(quest: str):
 
     raise HTTPException(status_code=404, detail='Нет такого вопроса')
 
-@app.get('/search')
-async def search(quest: str):
+@app.get('/test')
+async def test(quest: str):
     try:
         decoded_quest = unquote(quest)
         true_answers_list = search_correct_answers(decoded_quest)
