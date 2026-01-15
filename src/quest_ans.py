@@ -35,26 +35,44 @@ app.add_middleware(
 )
 
 def search_correct_answers(quest: str):
+    # Получаем путь к текущей директории
     this_folder = os.getcwd()
-    db_path = f'{this_folder}/answers.db'
 
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
+    # Список файлов баз данных
+    db_files = ['answers_1.db', 'answers_2.db']
 
-    cursor.execute('SELECT options FROM questions WHERE question LIKE ?', (f'%{quest}%',))
-    result = cursor.fetchone()
+    for db_file in db_files:
+        db_path = f'{this_folder}/{db_file}'
 
-    conn.close()
+        # Проверяем, существует ли файл
+        if not os.path.exists(db_path):
+            continue
 
-    if result:
-        options = result[0].split('\n')
-        correct_options = [option.strip().rstrip('.+') for option in options if option.strip().endswith('.+')]
-        return correct_options
-    else:
-        raise HTTPException(status_code=404, detail='Нет такого вопроса')
+        try:
+            # Подключаемся к базе данных
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-@app.get('/test')
-async def test(quest: str):
+            # Ищем вопрос в базе данных в колонке options
+            cursor.execute('SELECT options FROM questions WHERE question LIKE ?', (f'%{quest}%',))
+            result = cursor.fetchone()
+
+            conn.close()
+
+            if result:
+                # Разбиваем варианты ответов на отдельные строки
+                options = result[0].split('\n')
+                # Отбираем правильные ответы (те, которые заканчиваются на '+')
+                correct_options = [option.strip().rstrip('.+') for option in options if option.strip().endswith('.+')]
+                return correct_options
+        except Exception as e:
+            print(f"Ошибка при работе с базой данных {db_file}: {e}")
+            continue
+
+    raise HTTPException(status_code=404, detail='Нет такого вопроса')
+
+@app.get('/search')
+async def search(quest: str):
     try:
         decoded_quest = unquote(quest)
         true_answers_list = search_correct_answers(decoded_quest)
@@ -63,4 +81,5 @@ async def test(quest: str):
         raise e
 
 if __name__ == '__main__':
+    import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=8000)
