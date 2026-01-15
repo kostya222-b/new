@@ -67,11 +67,17 @@ def search_correct_answers(quest: str):
                 correct_options = []
                 for option in options:
                     if '.+' in option:
-                        # Разбиваем строку на отдельные варианты ответов
-                        sub_options = re.split(r'\s*\.\+\s*,\s*|\s*\.\+', option.strip())
-                        for sub_option in sub_options:
-                            if sub_option.strip():
-                                correct_options.append(sub_option.strip())
+                        # Если строка содержит несколько вариантов с .+
+                        if option.count('.+') > 1:
+                            # Разбиваем строку на отдельные варианты ответов
+                            sub_options = re.split(r'\s*\.\+\s*,\s*|\s*\.\+', option.strip())
+                            for sub_option in sub_options:
+                                if sub_option.strip():
+                                    correct_options.append(sub_option.strip())
+                        else:
+                            # Убираем .+ в конце строки
+                            correct_option = option.strip().rstrip('.+')
+                            correct_options.append(correct_option)
                 return correct_options
         except Exception as e:
             print(f"Ошибка при работе с базой данных {db_file}: {e}")
