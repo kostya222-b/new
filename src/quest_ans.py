@@ -63,7 +63,14 @@ def search_correct_answers(quest: str):
                 # Разбиваем варианты ответов на отдельные строки
                 options = result[0].split('\n')
                 # Отбираем правильные ответы (те, которые заканчиваются на '+')
-                correct_options = [option.strip().rstrip('.+') for option in options if option.strip().endswith('.+')]
+                correct_options = []
+                for option in options:
+                    if option.strip().endswith('.+'):
+                        # Разбиваем строку по запятой, если есть несколько вариантов в одной строке
+                        sub_options = [sub_option.strip().rstrip('.+') for sub_option in option.split(',')]
+                        correct_options.extend(sub_options)
+                    else:
+                        continue
                 return correct_options
         except Exception as e:
             print(f"Ошибка при работе с базой данных {db_file}: {e}")
