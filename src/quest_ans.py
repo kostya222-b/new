@@ -67,7 +67,7 @@ def search_correct_answers(quest: str):
                 for option in options:
                     if option.strip().endswith('.+'):
                         # Разбиваем строку по запятой, если есть несколько вариантов в одной строке
-                        sub_options = [sub_option.strip().rstrip('.+') for sub_option in option.split(',')]
+                        sub_options = [sub_option.strip().rstrip('.+') for sub_option in option.split('.+,')]
                         correct_options.extend(sub_options)
                     else:
                         continue
