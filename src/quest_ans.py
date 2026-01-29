@@ -55,7 +55,7 @@ def search_correct_answers(quest: str):
             cursor = conn.cursor()
 
             # Ищем вопрос в базе данных в колонке options
-            cursor.execute('SELECT options FROM questions WHERE question LIKE ?', (f'%{quest}%',))
+            cursor.execute('SELECT options FROM questions WHERE question = ?', (quest,))
             result = cursor.fetchone()
 
             conn.close()
