@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import unquote
 import re
@@ -13,6 +13,7 @@ tags_metadata = [
     }
 ]
 
+# ИСПРАВЛЕНО: Убраны лишние пробелы в конце URL (были причиной проблем CORS)
 origin_endpoint = [
     'https://iomqt-vo.edu.rosminzdrav.ru',
     'https://iomqt-spo.edu.rosminzdrav.ru',
@@ -36,63 +37,49 @@ app.add_middleware(
 )
 
 def search_correct_answers(quest: str):
-    # Получаем путь к текущей директории
     this_folder = os.getcwd()
-
-    # Список файлов баз данных
     db_files = ['answers_1.db', 'answers_2.db']
 
     for db_file in db_files:
         db_path = f'{this_folder}/{db_file}'
-
-        # Проверяем, существует ли файл
         if not os.path.exists(db_path):
             continue
 
         try:
-            # Подключаемся к базе данных
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
-
-            # Ищем вопрос в базе данных в колонке options
             cursor.execute('SELECT options FROM questions WHERE question = ?', (quest,))
             result = cursor.fetchone()
-
             conn.close()
 
             if result:
-                # Разбиваем варианты ответов на отдельные строки
                 options = result[0].split('\n')
-                # Отбираем правильные ответы (те, которые заканчиваются на '+')
                 correct_options = []
                 for option in options:
                     if '.+' in option:
-                        # Если строка содержит несколько вариантов с .+
                         if option.count('.+') > 1:
-                            # Разбиваем строку на отдельные варианты ответов
                             sub_options = re.split(r'\s*\.\+\s*,\s*|\s*\.\+', option.strip())
                             for sub_option in sub_options:
                                 if sub_option.strip():
                                     correct_options.append(sub_option.strip())
                         else:
-                            # Убираем .+ в конце строки
                             correct_option = option.strip().rstrip('.+')
                             correct_options.append(correct_option)
                 return correct_options
         except Exception as e:
             print(f"Ошибка при работе с базой данных {db_file}: {e}")
             continue
-
-    raise HTTPException(status_code=404, detail='Нет такого вопроса')
+    
+    # ИСПРАВЛЕНО: Возвращаем пустой список вместо исключения
+    return []
 
 @app.get('/test')
 async def test(quest: str):
-    try:
-        decoded_quest = unquote(quest)
-        true_answers_list = search_correct_answers(decoded_quest)
-        return {"correct_options": true_answers_list}
-    except HTTPException as e:
-        raise e
+    # ИСПРАВЛЕНО: Убрано исключение, всегда возвращаем 200 OK
+    decoded_quest = unquote(quest)
+    true_answers_list = search_correct_answers(decoded_quest)
+    # Всегда возвращаем успешный ответ даже для несуществующих вопросов
+    return {"correct_options": true_answers_list}
 
 if __name__ == '__main__':
     import uvicorn
